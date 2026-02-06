@@ -1,0 +1,39 @@
+# config.yaml (merged: bridge + teleop + safety)
+# Use with:
+#   python3 ur5_rtde_bridge.py --ros-args --params-file config.yaml
+#   python3 teleop_keyboard.py --ros-args --params-file config.yaml
+#   python3 dance_master.py --ros-args --params-file config.yaml
+
+ur5_rtde_bridge:
+  ros__parameters:
+    robot_ip: "192.168.0.43"
+    speed: 0.20
+    accel: 0.20
+    publish_rate: 30.0         # Hz (for /tcp_pose and /exec_status)
+
+teleop_keyboard:
+  ros__parameters:
+    cmd_topic: "/test/goal_tcp_pose"
+    tcp_pose_topic: "/tcp_pose"
+    stop_service: "/stop"
+    step_lin: 0.01             # meters per key
+    step_rot: 0.05             # rad per key (rotvec magnitude)
+    clamp_enabled: true
+    workspace_min: [-0.30, -0.40, 0.25]
+    workspace_max: [ 0.40, -0.20, 0.90]
+
+dance_master:
+  ros__parameters:
+    routines_file: "dance_routines.yaml"
+    cmd_topic: "/ur5_rtde_bridge/cmd"
+    status_topic: "/exec_status"
+    num_moves: 5
+    idle_delay_sec: 0.5
+
+dancer:
+  ros__parameters:
+    robot_ip: "192.168.0.43"
+    speed: 0.5
+    accel: 0.5
+    dwell_sec: 0.2
+    num_waypoints: -1
