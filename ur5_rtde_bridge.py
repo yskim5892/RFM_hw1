@@ -61,8 +61,8 @@ class UR5RTDEBridge(Node):
         self.accel_l = float(self.declare_parameter("accel_l", 0.25).value)   # m/s^2
 
         # moveJ params (joint). If not set, these defaults are reasonable.
-        self.speed_j = float(self.declare_parameter("speed_j", 1.0).value)    # rad/s
-        self.accel_j = float(self.declare_parameter("accel_j", 1.0).value)    # rad/s^2
+        self.speed_j = float(self.declare_parameter("speed_j", 0.5).value)    # rad/s
+        self.accel_j = float(self.declare_parameter("accel_j", 0.5).value)    # rad/s^2
 
         self.publish_rate = float(self.declare_parameter("publish_rate", 30.0).value)
 

@@ -21,9 +21,8 @@ import yaml
 class DanceMaster(Node):
     def __init__(self):
         super().__init__("dance_master")
-
         self.motion_topic = self.declare_parameter("motion_topic", "/hw/motion").value
-        self.status_topic = self.declare_parameter("status_topic", "/hw/status").value
+        self.status_topic = self.declare_parameter("status_topic", "/hw/dancer_status").value
         self.num_moves = int(self.declare_parameter("num_moves", 5).value)
         self.routines_file = self.declare_parameter("routines_file", "dance_routines.yaml").value
 

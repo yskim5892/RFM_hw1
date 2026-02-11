@@ -64,6 +64,7 @@ class Dancer(Node):
         self._load_pose_db()
 
         self.sub = self.create_subscription(String, "/hw/motion", self._on_cmd_motion, 10)
+        self.pub_dancer_status = self.create_publisher(String, "/hw/dancer_status", 10)
 
         self.get_logger().info(f"Dancer ready. Subscribing /hw/motion. RTDE -> {self.robot_ip}")
 
@@ -98,6 +99,11 @@ class Dancer(Node):
                 self.get_logger().warn("Busy. Ignore new motion command.")
                 return
             self._busy = True
+            
+            # Publish MOVING status immediately
+            msg_s = String()
+            msg_s.data = "MOVING"
+            self.pub_dancer_status.publish(msg_s)
 
         # TODO: motion마다 동작을 정의하면 됩니다. 
         # 예시 :
@@ -163,6 +169,11 @@ class Dancer(Node):
             finally:
                 with self._lock:
                     self._busy = False
+                    
+                    # Publish IDLE status when done
+                    msg_s = String()
+                    msg_s.data = "IDLE"
+                    self.pub_dancer_status.publish(msg_s)
         
         threading.Thread(target=worker, daemon=True).start()
 
