@@ -28,14 +28,14 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import JointState
+from rcl_interfaces.srv import SetParameters
+from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
 
 class Dancer(Node):
     def __init__(self):
         super().__init__("dancer")
 
         self.robot_ip = self.declare_parameter("robot_ip", "192.168.0.43").value
-        self.speed = float(self.declare_parameter("speed", 0.2).value)
-        self.accel = float(self.declare_parameter("accel", 0.2).value)
 
         # 각 waypoint 사이에 몇 초동안 쉴지 정의하는 parameter입니다. 
         # 각 waypoint가 끝날 때마다 time.sleep(self.dwell_sec) 를 쓰세요. 
@@ -65,8 +65,29 @@ class Dancer(Node):
 
         self.sub = self.create_subscription(String, "/hw/motion", self._on_cmd_motion, 10)
         self.pub_dancer_status = self.create_publisher(String, "/hw/dancer_status", 10)
+        
+        # Parameter client
+        self.cli_set_param = self.create_client(SetParameters, "/ur5_rtde_bridge/set_parameters")
 
         self.get_logger().info(f"Dancer ready. Subscribing /hw/motion. RTDE -> {self.robot_ip}")
+
+    def _set_bridge_param(self, name: str, value: float):
+        if not self.cli_set_param.wait_for_service(timeout_sec=1.0):
+            self.get_logger().warn("Param service not available.")
+            return
+
+        req = SetParameters.Request()
+        val = ParameterValue(type=ParameterType.PARAMETER_DOUBLE, double_value=float(value))
+        param = Parameter(name=name, value=val)
+        req.parameters = [param]
+
+        try:
+            # Standard python usage: `res = self.cli_set_param.call(req)` is synchronous.
+            res = self.cli_set_param.call(req)
+            if not res.results[0].successful:
+                 self.get_logger().warn(f"Failed to set {name}")
+        except Exception as e:
+            self.get_logger().warn(f"Param set failed: {e}")
 
     def _on_status(self, msg: String):
         # main thread에서는 ur5_rtde_bridge가 보내는 status를 받아서
@@ -115,6 +136,11 @@ class Dancer(Node):
                     return
                 
                 if name == "test1":
+                    # Joint 기반 움직임 속도 조절
+                    self._set_bridge_param("speed_j", 0.1)
+                    self._set_bridge_param("accel_j", 0.1)
+                    
+                    # Joint 기반 움직임 publish
                     msg_j = JointState()
                     msg_j.position = [0.0, 0.0, 0.0, 0.0, 0.0, 0.3] # Wrist3 관절을 0.3(rad) 회전
                     self.pub_joint_rel.publish(msg_j)
@@ -126,6 +152,11 @@ class Dancer(Node):
                     if not self._wait_status("IDLE", timeout_sec=20.0):
                         self.get_logger().warn("Timeout waiting IDLE (motion may be stuck or motion is too long.)")
 
+                    # Joint 기반 움직인 속도 조절
+                    self._set_bridge_param("speed_j", 0.5)
+                    self._set_bridge_param("accel_j", 0.5)
+                    
+                    # Joint 기반 움직임 publish
                     msg_j = JointState()
                     msg_j.position = [0.0, 0.0, 0.0, 0.0, 0.0, -0.3] # Wrist3 관절을 -0.3(rad) 회전       
                     self.pub_joint_rel.publish(msg_j)

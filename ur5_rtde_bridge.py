@@ -66,6 +66,9 @@ class UR5RTDEBridge(Node):
 
         self.publish_rate = float(self.declare_parameter("publish_rate", 30.0).value)
 
+        # Dynamic parameter callback
+        self.add_on_set_parameters_callback(self._on_param_change)
+
         # ---- RTDE ----
         import rtde_control, rtde_receive
         self.rtde_c = rtde_control.RTDEControlInterface(self.robot_ip)
@@ -139,8 +142,24 @@ class UR5RTDEBridge(Node):
         try:
             self.pub_status.publish(s)
         except Exception:
-            # If middleware is not ready, just skip.
             pass
+
+    def _on_param_change(self, params):
+        from rcl_interfaces.msg import SetParametersResult
+        for p in params:
+            if p.name == "speed_l":
+                self.speed_l = p.value
+                self.get_logger().info(f"Updated speed_l: {self.speed_l}")
+            elif p.name == "accel_l":
+                self.accel_l = p.value
+                self.get_logger().info(f"Updated accel_l: {self.accel_l}")
+            elif p.name == "speed_j":
+                self.speed_j = p.value
+                self.get_logger().info(f"Updated speed_j: {self.speed_j}")
+            elif p.name == "accel_j":
+                self.accel_j = p.value
+                self.get_logger().info(f"Updated accel_j: {self.accel_j}")
+        return SetParametersResult(successful=True)
 
     # --------------------
     # periodic state publish

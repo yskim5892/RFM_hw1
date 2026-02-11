@@ -47,7 +47,6 @@ class DanceMaster(Node):
 
         self._status: Optional[str] = None
         self._sent = 0
-        self._need_idle = False
         self._seen_moving = False
 
         self.timer = self.create_timer(0.05, self._tick)
@@ -91,7 +90,6 @@ class DanceMaster(Node):
         self.pub_motion.publish(m)
 
         self._sent += 1
-        self._need_idle = True
         self._seen_moving = False
         self.get_logger().info(f"[{self._sent}/{self.num_moves}] -> {m.data}")
 
@@ -108,8 +106,7 @@ class DanceMaster(Node):
                 rclpy.shutdown()
             return
 
-        if not self._need_idle:
-            return
+
 
         # need a real "MOVING -> IDLE" cycle
         if self._status != "IDLE":
@@ -117,7 +114,6 @@ class DanceMaster(Node):
         if not self._seen_moving:
             return
 
-        self._need_idle = False
         self._send_go()
 
 
